@@ -23,12 +23,17 @@ write_config() {
     fi
 }
 
-# Configure Target
 configure_target() {
     local target=$(read_config target)
-    target=$(dialog --inputbox "Enter target IP/Hostname:" 8 40 "$target" 3>&1 1>&2 2>&3)
-    write_config target "$target"
+    # Show an input box to get the target from the user
+    target=$(dialog --title "Configure Target" --inputbox "Enter target IP/Hostname:" 8 45 "$target" 3>&1 1>&2 2>&3)
+
+    # Check if the user pressed cancel or escape
+    if [ $? -eq 0 ]; then
+        write_config target "$target"
+    fi
 }
+
 
 # Configure Nmap Profile
 configure_profile() {
