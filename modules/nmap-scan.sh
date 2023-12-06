@@ -1,88 +1,79 @@
 #!/bin/bash
 
-# Nmap Module
-MODULES_DIR="modules"
-NMAP_CONFIG="$MODULES_DIR/nmap_config.conf"
-NMAP_LOG_DIR="$MODULES_DIR/logs"
-mkdir -p "$NMAP_LOG_DIR"
+# Configuration file path
+CONFIG_FILE="/etc/pi-turtle/nmap_config.conf"
+LOG_DIR="/var/log/pi-turtle/nmap"
+DATE=$(date +"%Y-%m-%d_%H-%M")
 
-# Reads configuration value
+# Ensure configuration and log directories exist
+mkdir -p "$(dirname "$CONFIG_FILE")"
+mkdir -p "$LOG_DIR"
+
+# Function to read configuration
 read_config() {
-    local key=$1
-    grep "^$key=" "$NMAP_CONFIG" | cut -d'=' -f2
-}
-
-# Writes configuration value
-write_config() {
-    local key=$1
-    local value=$2
-    if grep -q "^$key=" "$NMAP_CONFIG"; then
-        sed -i "s/^$key=.*/$key=$value/" "$NMAP_CONFIG"
+    if [ -f "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE"
     else
-        echo "$key=$value" >> "$NMAP_CONFIG"
+        touch "$CONFIG_FILE"
     fi
 }
 
-configure_target() {
-    local target=$(read_config target)
-    # Show an input box to get the target from the user
-    target=$(dialog --title "Configure Target" --inputbox "Enter target IP/Hostname:" 8 45 "$target" 3>&1 1>&2 2>&3)
+# Function to write configuration
+write_config() {
+    echo "nmap_target='$nmap_target'" > "$CONFIG_FILE"
+    echo "nmap_profile='$nmap_profile'" >> "$CONFIG_FILE"
+    echo "nmap_log='$LOG_DIR'" >> "$CONFIG_FILE"
+}
 
-    # Check if the user pressed cancel or escape
-    if [ $? -eq 0 ]; then
-        write_config target "$target"
+# Function to start scanning
+start_scan() {
+    read_config
+    if [ -z "$nmap_target" ] || [ -z "$nmap_profile" ]; then
+        echo "nmap module missing configuration"
+        exit
     fi
-}
 
-
-# Configure Nmap Profile
-configure_profile() {
-    local profile=$(read_config profile)
-    profile=$(dialog --menu "Select Nmap Profile:" 15 50 5 \
-        1 "Intense scan" \
-        2 "Intense scan plus UDP" \
-        3 "Intense scan, all TCP ports" \
-        4 "Ping scan" \
-        5 "Quick scan" \
-        --stdout)
-    write_config profile "$profile"
-}
-
-# Execute Nmap Scan
-execute_scan() {
-    local target=$(read_config target)
-    local profile=$(read_config profile)
-    local log_file="$NMAP_LOG_DIR/nmap_$(date +"%Y-%m-%d_%H-%M").log"
-    local cmd="nmap"
-
-    case $profile in
-        1) cmd="$cmd -T4 -A -v";;
-        2) cmd="$cmd -sS -sU -T4 -A -v";;
-        3) cmd="$cmd -p 1-65535 -T4 -A -v";;
-        4) cmd="$cmd -sn";;
-        5) cmd="$cmd -T4 -F";;
-        *) echo "Invalid profile"; return;;
+    # Define profiles
+    case $nmap_profile in
+        1) PROFILE="-T4 -A -v";;
+        # Add other profiles here
     esac
 
-    cmd="$cmd $target > $log_file"
-    eval $cmd
-
-    dialog --textbox "$log_file" 20 60
+    echo "Executing: nmap $PROFILE $nmap_target > $nmap_log/nmap_$DATE.log"
+    nmap $PROFILE $nmap_target > "$nmap_log/nmap_$DATE.log" 2>&1 &
 }
 
-# Nmap Module Menu
+# Function to configure target
+configure_target() {
+    read_config
+    echo "Enter target network (e.g., 192.168.1.0/24):"
+    read -r nmap_target
+    write_config
+}
+
+# Function to configure profile
+configure_profile() {
+    read_config
+    echo "Select Scan Profile:"
+    echo "1) Intense scan"
+    # Add other profiles here
+    read -r nmap_profile
+    write_config
+}
+
+# Main Menu Integration
 while true; do
-    CHOICE=$(dialog --menu "Nmap Module" 15 50 4 \
-        1 "Configure Target" \
-        2 "Configure Profile" \
-        3 "Execute Scan" \
-        4 "Exit" \
-        --stdout)
-    
-    case $CHOICE in
+    echo "1) Configure Target"
+    echo "2) Configure Profile"
+    echo "3) Start Scan"
+    echo "4) Exit"
+    read -r choice
+
+    case $choice in
         1) configure_target ;;
         2) configure_profile ;;
-        3) execute_scan ;;
+        3) start_scan ;;
         4) break ;;
+        *) echo "Invalid option";;
     esac
 done
