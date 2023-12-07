@@ -3,5 +3,5 @@
 # Silent: true
 # Logfile: /opt/pi-turtle/logs/responder.log
 
-# Example command (replace with actual command to run responder)
+echo "Responder script started"
 sudo responder -I wlan0 -wd
