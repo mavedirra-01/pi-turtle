@@ -1,6 +1,7 @@
 #!/bin/bash
 # Dependencies: nmap
 # Inputs: target, scan_type
+# Help: scan_type - Options are 'Quick Scan' or 'Intense Scan'
 
 # Read arguments
 target=$1
