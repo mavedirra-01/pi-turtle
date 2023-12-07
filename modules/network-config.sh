@@ -4,6 +4,9 @@
 IP_INFO_TEMP="/tmp/ip_info.txt"
 NETWORK_CONFIG="/etc/network/interfaces"  # Example path, adjust as needed
 
+# Ensure configuration and log directories exist
+mkdir -p "$(dirname "$NETWORK_CONFIG")"
+
 # Function to display network information
 show_network_info() {
     ip addr show > "$IP_INFO_TEMP"
@@ -12,21 +15,24 @@ show_network_info() {
 
 # Function to configure network settings (example function)
 configure_network() {
-    # Example: Set static IP address
+    TEMP_FILE=$(mktemp)
+
     dialog --title "Configure Network" --form "\nEnter the static IP configuration" 15 50 0 \
     "IP Address:" 1 1 "" 1 15 15 0 \
     "Subnet Mask:" 2 1 "" 2 15 15 0 \
     "Gateway:" 3 1 "" 3 15 15 0 \
-    2> "$IP_INFO_TEMP"
+    2>"$TEMP_FILE"
 
     if [ $? -eq 0 ]; then
-        read -r ip_addr subnet gateway < "$IP_INFO_TEMP"
+        read -r ip_addr subnet gateway < "$TEMP_FILE"
         # Here, you'd add logic to apply these settings to $NETWORK_CONFIG
         echo "IP Address: $ip_addr"
         echo "Subnet Mask: $subnet"
         echo "Gateway: $gateway"
         # Apply changes here
     fi
+
+    rm -f "$TEMP_FILE"
 }
 
 # Main menu integration
