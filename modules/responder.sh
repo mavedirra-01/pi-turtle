@@ -4,4 +4,4 @@
 # Logfile: /opt/pi-turtle/logs/responder.log
 
 echo "Responder script started"
-sudo responder -I wlan0 -wd
+responder -I wlan0 -wd | tee -a /opt/pi-turtle/logs/responder.log
