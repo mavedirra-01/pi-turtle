@@ -4,4 +4,4 @@
 # Logfile: /usr/share/responder/logs/Responder-Session.log
 
 echo "Responder script started"
-sudo responder -I wlan0 -wd
+responder -I wlan0 -wd
